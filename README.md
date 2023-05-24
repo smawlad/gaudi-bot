@@ -1,6 +1,6 @@
 # TelegramSummarizer
 
-A Go-based Telegram bot for summarizing chat conversations.
+A GPT-powered Go-based Telegram bot for summarizing chat conversations.
 
 Supports two commands -
 
