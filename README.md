@@ -4,6 +4,6 @@ Kotlin-based Telegram do-it-all bot.
 
 ## Commands
 
-***/digest*** - chat summary
+`/digest` chat summary
 
-***/chat*** - multi-modal universal interface
+`/chat` - multi-modal universal interface
