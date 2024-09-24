@@ -1,13 +1,11 @@
 # Gaudi Bot
 
-Kotlin-based Telegram do-it-all bot.
+Kotlin-based Telegram do-it-all bot hosted on private encrypted server.
 
 ## Commands
 
-***/digest*** allows users to get a summary of the chat content since their last login, or a specified message / article (link)
+`/digest` chat summary
 
-***/ask*** allows users to ask questions based on content that bot has read, or general questions based on GPT knowledge-base
+`/chat` multi-modal universal interface
 
-***/askinternet*** allows users to ask questions and get an answer based on real-time internet browsing 
-
-***/chat*** universal interface, does anything you ask
+For best availability, use `/setkey` and use your own _encrypted_ API key 
