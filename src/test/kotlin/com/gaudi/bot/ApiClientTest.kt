@@ -1,9 +1,9 @@
 package com.gaudi.bot
 
-import com.gaudi.bot.api.TelegramClient
-import com.gaudi.bot.api.sendMessage
-import com.gaudi.bot.api.Message
-import com.gaudi.bot.api.Chat
+import com.gaudi.bot.api.client.TelegramClient
+import com.gaudi.bot.api.client.sendMessage
+import com.gaudi.bot.api.model.Message
+import com.gaudi.bot.api.model.Chat
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -14,7 +14,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class TelegramClientTest {
+class ApiClientTest {
 
     private val token = "mock-token"
     private lateinit var client: TelegramClient

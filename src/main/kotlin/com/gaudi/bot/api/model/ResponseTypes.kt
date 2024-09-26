@@ -1,4 +1,4 @@
-package com.gaudi.bot.api
+package com.gaudi.bot.api.model
 
 import kotlinx.serialization.Serializable
 
