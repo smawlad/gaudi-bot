@@ -26,6 +26,7 @@ dependencies {
     // Ktor
     implementation("io.ktor:ktor-client-core:2.3.12")
     implementation("io.ktor:ktor-client-cio:2.3.12")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
     implementation("io.ktor:ktor-server-core:2.3.12")
     implementation("io.ktor:ktor-server-netty:2.3.12")
     implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
@@ -44,6 +45,7 @@ dependencies {
     implementation("org.apache.opennlp:opennlp-tools:2.3.1")
 
     // Logging
+    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
     implementation("ch.qos.logback:logback-classic:1.5.0")
 
     // Testing

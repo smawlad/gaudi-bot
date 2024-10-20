@@ -1,8 +1,11 @@
 package com.gaudi.bot.api.server
 
+import com.gaudi.bot.ai.LMWrapper
+import com.gaudi.bot.ai.ModelType
 import com.gaudi.bot.api.client.TelegramClient
 import com.gaudi.bot.api.client.sendMessage
 import com.gaudi.bot.api.model.Update
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -13,6 +16,8 @@ import io.ktor.server.routing.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.contentnegotiation.*
 import kotlinx.serialization.json.Json
+
+private val logger = KotlinLogging.logger {}
 
 fun startWebhookServer(client: TelegramClient, port: Int = 8080) {
     embeddedServer(Netty, port = port) {
@@ -25,11 +30,11 @@ fun startWebhookServer(client: TelegramClient, port: Int = 8080) {
             post("/webhook") {
                 try {
                     val update = call.receive<Update>()
-                    println(update)
+                    logger.info { "Received update: $update" }
                     handleUpdate(update, client)
                     call.respond(HttpStatusCode.OK)
                 } catch (e: Exception) {
-                    println(e)
+                    logger.error(e) { "Error processing update" }
                     call.respond(HttpStatusCode.InternalServerError, "Error processing update: ${e.message}")
                 }
             }
@@ -40,7 +45,9 @@ fun startWebhookServer(client: TelegramClient, port: Int = 8080) {
 suspend fun handleUpdate(update: Update, client: TelegramClient) {
     if (update.message != null) {
         val message = update.message
-        // You can add logic here to respond to the message using client.sendMessage()
-        client.sendMessage(message.chat.id, text = "Hi!")
+        val claudeWrapper = LMWrapper(ModelType.CLAUDE)
+        val modelResponse = claudeWrapper.generateResponse(message.text.toString())
+        client.sendMessage(message.chat.id, modelResponse)
+        logger.info { "Sent response to chat ${message.chat.id}" }
     }
 }
