@@ -32,6 +32,9 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
 
+    // Yaml
+    implementation("org.yaml:snakeyaml:2.0")
+
     // Database
     implementation("org.jetbrains.exposed:exposed-core:0.46.0")
     implementation("org.jetbrains.exposed:exposed-dao:0.46.0")
@@ -50,9 +53,16 @@ dependencies {
 
     // Testing
     testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("com.h2database:h2:2.2.224")  // In-memory database for testing
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("io.ktor:ktor-client-mock:2.3.12")
+    // Ktor server test dependencies
+    testImplementation("io.ktor:ktor-server-test-host:2.3.12")
+    testImplementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
+    testImplementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

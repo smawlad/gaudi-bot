@@ -1,11 +1,10 @@
-package com.gaudi.bot.api.client
+package com.gaudi.bot.api
 
-import com.gaudi.bot.api.model.Message
-import com.gaudi.bot.api.model.TelegramResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
@@ -15,7 +14,7 @@ class TelegramClient(token: String, val httpClient: HttpClient) {
     val serializer = Json {
         ignoreUnknownKeys = true
     }
-    suspend inline fun <reified T> sendRequest(method: String, params: Map<String, String>): T {
+    suspend inline fun <reified T> sendRequest(method: String, params: Map<String, Any>): T {
         val response: HttpResponse = httpClient.get("$baseUrl/$method") {
             params.forEach { (key, value) -> parameter(key, value) }
         }
@@ -23,9 +22,9 @@ class TelegramClient(token: String, val httpClient: HttpClient) {
     }
 }
 
-suspend fun TelegramClient.sendMessage(chatId: Long, text: String): TelegramResponse<Message> {
-    logger.info { "Sending message to chat $chatId: $text" }
-    val params = mapOf("chat_id" to chatId.toString(), "text" to text)
+suspend fun TelegramClient.sendMessage(text: String, replyParameters: ReplyParameters): TelegramResponse<Message> {
+    logger.info { "Sending message to chat ${replyParameters.chat_id}: $text" }
+    val params = mapOf("chat_id" to replyParameters.chat_id, "text" to text, "reply_parameters" to Json.encodeToString(replyParameters))
     return sendRequest("sendMessage", params)
 }
 

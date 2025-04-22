@@ -1,4 +1,4 @@
-package com.gaudi.bot.api.model
+package com.gaudi.bot.api
 
 import kotlinx.serialization.Serializable
 
@@ -16,7 +16,23 @@ data class Message(
     val chat: Chat,
     val date: Int,
     val text: String? = null,
-    val from: User? = null
+    val from: User? = null,
+    val reply_to_message: Message? = null, // Added to support checking replies
+    val entities: List<MessageEntity>? = null // Added to support mention detection
+)
+
+@Serializable
+data class MessageEntity(
+    val type: String,
+    val offset: Int,
+    val length: Int,
+    val user: User? = null
+)
+
+@Serializable
+data class ReplyParameters(
+    val message_id: Long,
+    val chat_id: Long
 )
 
 @Serializable
@@ -44,7 +60,18 @@ data class Update(
     val update_id: Long,
     val message: Message? = null,
     val edited_message: Message? = null,
+    val inline_query: InlineQuery? = null,
     val callback_query: CallbackQuery? = null
+)
+
+@Serializable
+data class InlineQuery(
+    val id: String,
+    val from: User,
+    val query: String,
+    val offset: String,
+    val chat_type: String? = null,
+    val location: Location? = null
 )
 
 @Serializable
@@ -131,3 +158,32 @@ data class ChatMember(
     val can_restrict_members: Boolean? = null,
     val can_promote_members: Boolean? = null
 )
+
+// Extension functions to help with common message checks
+fun Message.isMentioningUser(username: String): Boolean {
+    // Check for mentions in entities
+    val hasMentionEntity = entities?.any {
+        it.type == "mention" && text?.substring(it.offset, it.offset + it.length) == username
+    } == true
+
+    // Also check for mentions in plain text
+    val hasMentionInText = text?.contains(username) ?: false
+
+    return hasMentionEntity || hasMentionInText
+}
+
+fun Message.isReplyToUser(username: String): Boolean {
+    return reply_to_message?.from?.username == username
+}
+
+fun Message.isCommand(): Boolean {
+    return text?.startsWith("/") ?: false
+}
+
+fun Message.getCommand(): String? {
+    return if (isCommand()) {
+        text?.split(" ")?.firstOrNull()
+    } else {
+        null
+    }
+}

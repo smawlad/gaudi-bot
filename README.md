@@ -1,10 +1,10 @@
-# Gaudi Bot
+# Gaudí Bot
 
 Kotlin-based Telegram do-it-all bot hosted on private encrypted server.
 
 ## Commands
 
-`/digest` chat summary
+`/summary` chat summary
 
 `/chat` multi-modal universal interface
 
