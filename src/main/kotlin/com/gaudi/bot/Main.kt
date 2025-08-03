@@ -4,7 +4,7 @@ import com.gaudi.bot.api.TelegramClient
 import com.gaudi.bot.api.setWebhook
 import com.gaudi.bot.api.startMemoryEnabledWebhookServer
 import com.gaudi.bot.memory.UserMemorySystem
-import com.gaudi.bot.storage.MessageStorage
+import com.gaudi.bot.memory.MessageStorage
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -33,7 +33,7 @@ suspend fun main() {
             throw e  // Rethrow to terminate the application
         }
 
-        // Initialize the message storage system for summarys
+        // Initialize the message storage system for summaries
         try {
             logger.info { "Initializing message storage system..." }
             MessageStorage.initialize(dbUrl, dbUser, dbPassword)

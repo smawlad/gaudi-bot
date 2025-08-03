@@ -1,6 +1,9 @@
-package com.gaudi.bot.storage
+package com.gaudi.bot.memory
 
-import com.gaudi.bot.api.*
+import com.gaudi.bot.api.Chat
+import com.gaudi.bot.api.Message
+import com.gaudi.bot.api.Update
+import com.gaudi.bot.api.User
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,7 +13,15 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.innerJoin
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 
@@ -18,7 +29,7 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * Storage system for retaining message history from chats
- * This allows us to perform operations like summarys even when Telegram API
+ * This allows us to perform operations like summaries even when Telegram API
  * limitations prevent accessing full history.
  */
 object MessageStorage {
@@ -27,7 +38,7 @@ object MessageStorage {
      * Initialize the database tables for message storage
      */
     fun initialize(jdbcUrl: String, username: String, password: String) {
-        Database.connect(jdbcUrl, driver = "org.postgresql.Driver", user = username, password = password)
+        Database.Companion.connect(jdbcUrl, driver = "org.postgresql.Driver", user = username, password = password)
 
         transaction {
             SchemaUtils.create(StoredMessages, StoredUsers, StoredChats)
@@ -50,14 +61,14 @@ object MessageStorage {
 
 
             // Store the message
-            val newMessage = StoredMessageEntity.new {
+            val newMessage = StoredMessageEntity.Companion.new {
                 this.updateId = update.update_id
                 this.messageId = msg.message_id
                 this.chatId = chatId
                 this.userId = userId
                 this.date = msg.date
                 this.text = msg.text
-                this.content = Json.encodeToString(update.message)
+                this.content = Json.Default.encodeToString(update.message)
             }
 
             newMessage.id.value
@@ -89,7 +100,7 @@ object MessageStorage {
                             it[StoredMessages.userId] = userId
                             it[date] = message.date
                             it[text] = message.text
-                            it[content] = Json.encodeToString(message)
+                            it[content] = Json.Default.encodeToString(message)
                         }
                         true
                     } catch (e: Exception) {
@@ -107,17 +118,17 @@ object MessageStorage {
     suspend fun getMessagesForChat(chatId: Long, fromTimestamp: Int): List<Message> = withContext(Dispatchers.IO) {
         transaction {
             // Find the stored chat ID (internal DB ID, not Telegram chat ID)
-            val storedChat = StoredChatEntity.find { StoredChats.telegramId eq chatId }.firstOrNull()
+            val storedChat = StoredChatEntity.Companion.find { StoredChats.telegramId eq chatId }.firstOrNull()
                 ?: return@transaction emptyList()
 
             // Get messages for this chat after the specified timestamp
-            StoredMessageEntity.find {
+            StoredMessageEntity.Companion.find {
                 (StoredMessages.chatId eq storedChat.id) and (StoredMessages.date greaterEq fromTimestamp)
             }.orderBy(StoredMessages.date to SortOrder.ASC)
                 .map {
                     // Parse the stored JSON back to Message objects
                     try {
-                        Json.decodeFromString<Message>(it.content)
+                        Json.Default.decodeFromString<Message>(it.content)
                     } catch (e: Exception) {
                         logger.error(e) { "Error parsing stored message ${it.id}" }
                         null
@@ -127,95 +138,30 @@ object MessageStorage {
         }
     }
 
-    /**
-     * Get message count statistics for a chat
-     */
-    suspend fun getMessageStats(chatId: Long): Map<String, Int> = withContext(Dispatchers.IO) {
-        transaction {
-            // Find the stored chat ID
-            val storedChat = StoredChatEntity.find { StoredChats.telegramId eq chatId }.firstOrNull()
-                ?: return@transaction emptyMap()
-
-            // Calculate statistics
-            val totalCount = StoredMessageEntity.find { StoredMessages.chatId eq storedChat.id }.count()
-
-            // Get count for the last 24 hours
-            val dayAgo = Instant.now().minusSeconds(24 * 60 * 60).epochSecond.toInt()
-            val last24HoursCount = StoredMessageEntity.find {
-                (StoredMessages.chatId eq storedChat.id) and (StoredMessages.date greaterEq dayAgo)
-            }.count()
-
-            // Get count for the last week
-            val weekAgo = Instant.now().minusSeconds(7 * 24 * 60 * 60).epochSecond.toInt()
-            val lastWeekCount = StoredMessageEntity.find {
-                (StoredMessages.chatId eq storedChat.id) and (StoredMessages.date greaterEq weekAgo)
-            }.count()
-
-            mapOf(
-                "total" to totalCount.toInt(),
-                "last24Hours" to last24HoursCount.toInt(),
-                "lastWeek" to lastWeekCount.toInt()
-            )
-        }
-    }
-
-    /**
-     * Get most active users in a chat
-     */
-    suspend fun getMostActiveUsers(chatId: Long, limit: Int = 5): List<Pair<User, Int>> = withContext(Dispatchers.IO) {
-        transaction {
-            // Find the stored chat ID
-            val storedChat = StoredChatEntity.find { StoredChats.telegramId eq chatId }.firstOrNull()
-                ?: return@transaction emptyList()
-
-            // Use SQL grouping to count messages per user
-            val userCounts = StoredMessages
-                .innerJoin(StoredUsers, { userId }, { id })
-                .slice(StoredUsers.id, StoredUsers.content, StoredMessages.id.count())
-                .select { StoredMessages.chatId eq storedChat.id }
-                .groupBy(StoredUsers.id, StoredUsers.content)
-                .orderBy(StoredMessages.id.count(), SortOrder.DESC)
-                .limit(limit)
-                .map {
-                    val user = try {
-                        Json.decodeFromString<User>(it[StoredUsers.content])
-                    } catch (e: Exception) {
-                        logger.error(e) { "Error parsing stored user" }
-                        null
-                    }
-                    val count = it[StoredMessages.id.count()].toInt()
-                    if (user != null) Pair(user, count) else null
-                }
-                .filterNotNull()
-
-            userCounts
-        }
-    }
-
     // Helper function to ensure a chat exists in the database
     private fun Transaction.ensureChatExists(chat: Chat): EntityID<Long> {
-        val existingChat = StoredChatEntity.find { StoredChats.telegramId eq chat.id }.firstOrNull()
+        val existingChat = StoredChatEntity.Companion.find { StoredChats.telegramId eq chat.id }.firstOrNull()
 
-        return existingChat?.id ?: StoredChatEntity.new {
+        return existingChat?.id ?: StoredChatEntity.Companion.new {
             telegramId = chat.id
             type = chat.type
             title = chat.title
             username = chat.username
-            content = Json.encodeToString(chat)
+            content = Json.Default.encodeToString(chat)
         }.id
     }
 
     // Helper function to ensure a user exists in the database
     private fun Transaction.ensureUserExists(user: User): EntityID<Long> {
-        val existingUser = StoredUserEntity.find { StoredUsers.telegramId eq user.id }.firstOrNull()
+        val existingUser = StoredUserEntity.Companion.find { StoredUsers.telegramId eq user.id }.firstOrNull()
 
-        return existingUser?.id ?: StoredUserEntity.new {
+        return existingUser?.id ?: StoredUserEntity.Companion.new {
             telegramId = user.id
             isBot = user.is_bot
             firstName = user.first_name
             lastName = user.last_name
             username = user.username
-            content = Json.encodeToString(user)
+            content = Json.Default.encodeToString(user)
         }.id
     }
 }

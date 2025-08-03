@@ -15,7 +15,7 @@ data class Message(
     val message_id: Long,
     val chat: Chat,
     val date: Int,
-    val text: String? = null,
+    var text: String? = null,
     val from: User? = null,
     val reply_to_message: Message? = null, // Added to support checking replies
     val entities: List<MessageEntity>? = null // Added to support mention detection
@@ -177,7 +177,12 @@ fun Message.isReplyToUser(username: String): Boolean {
 }
 
 fun Message.isCommand(): Boolean {
-    return text?.startsWith("/") ?: false
+    return text?.startsWith("/") == true
+}
+
+fun Message.stripUsername() : Message {
+    text = text?.removePrefix(System.getenv("BOT_USERNAME"))
+    return this
 }
 
 fun Message.getCommand(): String? {

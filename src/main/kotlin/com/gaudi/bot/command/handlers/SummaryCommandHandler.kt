@@ -7,11 +7,10 @@ import com.gaudi.bot.ai.prompts.PromptManager
 import com.gaudi.bot.api.Message
 import com.gaudi.bot.api.ReplyParameters
 import com.gaudi.bot.api.TelegramClient
-import com.gaudi.bot.api.User
 import com.gaudi.bot.api.sendMessage
 import com.gaudi.bot.command.CommandHandler
-import com.gaudi.bot.storage.MessageStorage
-import com.gaudi.bot.storage.UserKeyManager
+import com.gaudi.bot.memory.MessageStorage
+import com.gaudi.bot.util.UserKeyManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
 import java.time.temporal.ChronoUnit

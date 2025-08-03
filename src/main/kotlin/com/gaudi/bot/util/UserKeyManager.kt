@@ -1,4 +1,4 @@
-package com.gaudi.bot.storage
+package com.gaudi.bot.util
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.bouncycastle.util.encoders.Base64

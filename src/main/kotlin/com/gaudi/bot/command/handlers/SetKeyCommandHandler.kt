@@ -5,7 +5,7 @@ import com.gaudi.bot.api.ReplyParameters
 import com.gaudi.bot.api.TelegramClient
 import com.gaudi.bot.api.sendMessage
 import com.gaudi.bot.command.CommandHandler
-import com.gaudi.bot.storage.UserKeyManager
+import com.gaudi.bot.util.UserKeyManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger {}

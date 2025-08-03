@@ -27,7 +27,7 @@ data class LLMResponse(
     val metadata: Map<String, Any> = emptyMap()
 )
 
-class LLM(private val config: LLMConfig) {
+class LLM(config: LLMConfig) {
     // Create conversation manager for history handling
     private val conversationManager = ConversationManager()
 

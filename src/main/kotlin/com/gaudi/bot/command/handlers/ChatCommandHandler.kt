@@ -10,7 +10,7 @@ import com.gaudi.bot.api.TelegramClient
 import com.gaudi.bot.api.sendMessage
 import com.gaudi.bot.command.CommandHandler
 import com.gaudi.bot.memory.UserMemorySystem
-import com.gaudi.bot.storage.UserKeyManager
+import com.gaudi.bot.util.UserKeyManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 
@@ -40,8 +40,8 @@ class ChatCommandHandler : CommandHandler {
         // Get or create a thread for this conversation
         var thread = UserMemorySystem.getLatestThread(userId, chatId)
 
-        // If no thread exists or the last thread is older than 6 hours, create a new one
-        if (thread == null || System.currentTimeMillis() - thread.updatedAt > 6 * 60 * 60 * 1000) {
+        // If no thread exists or the last thread is older than 72 hours, create a new one
+        if (thread == null || System.currentTimeMillis() - thread.updatedAt > 72 * 60 * 60 * 1000) {
             val threadTitle = "Chat on ${LocalDateTime.now()}"
             val threadId = UserMemorySystem.createThread(userId, chatId, threadTitle)
             thread = UserMemorySystem.getThread(threadId)

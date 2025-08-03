@@ -1,7 +1,7 @@
 package com.gaudi.bot.listener
 
 import com.gaudi.bot.api.Update
-import com.gaudi.bot.storage.MessageStorage
+import com.gaudi.bot.memory.MessageStorage
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +13,7 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * Listens for incoming messages and stores them in the database
- * This enables features like chat history summarys
+ * This enables features like chat history summaries
  */
 object MessageListener {
     private val scope = CoroutineScope(Dispatchers.Default)

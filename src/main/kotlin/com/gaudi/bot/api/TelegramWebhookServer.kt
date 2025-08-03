@@ -55,17 +55,12 @@ fun startMemoryEnabledWebhookServer(client: TelegramClient, port: Int = 8080) {
  * Enhanced message processor that supports memory and conversation persistence
  */
 class MemoryEnabledMessageProcessor(private val client: TelegramClient) {
-    var botUsername: String = System.getenv("BOT_USERNAME")
-    var botId: Long = System.getenv("BOT_ID").toLong()
+    var botUsername: String = System.getenv("BOT_USERNAME") ?: System.getProperty("BOT_USERNAME") ?: "bot"
+    var botId: Long = (System.getenv("BOT_ID") ?: System.getProperty("BOT_ID") ?: "0").toLong()
 
     suspend fun processUpdate(update: Update) {
         val message = update.message ?: return
         if (message.text == null) return
-
-        // todo: fix below, hardcode block for now
-        //if (System.getenv("BLOCK_LIST").split(" ").contains(message.from?.id.toString())) { return }
-        // if (message.from?.id == 741461185L) return
-
 
         // First check if this is a direct command
         if (message.isCommand()) {
@@ -75,13 +70,7 @@ class MemoryEnabledMessageProcessor(private val client: TelegramClient) {
 
         // Only continue if the bot is mentioned or replied to
         if (shouldBotRespond(message)) {
-            // If this is a reply to the bot, treat it as a continuation of conversation
-            if (isReplyToBot(message)) {
-                handleConversationContinuation(message)
-            } else {
-                // Default conversation behavior when bot is mentioned but no command
-                handleDefaultMention(message)
-            }
+            handleConversationContinuation(message)
         }
     }
 
@@ -120,27 +109,15 @@ class MemoryEnabledMessageProcessor(private val client: TelegramClient) {
 
         // Get the latest thread for this user in this chat
         val thread = UserMemorySystem.getLatestThread(userId, chatId)
-
+        val sanitized = message.stripUsername()
         if (thread == null) {
             // No previous thread found, treat as a new /chat command
-            val fakeChatCommand = message.copy(
-                text = "/chat ${message.text}"
+            val fakeChatCommand = sanitized.copy(
+                text = "/chat ${sanitized.text}"
             )
             CommandRegistry.getHandler("/chat")?.handle(fakeChatCommand, client)
             return
         }
-
-//        // Add the user message to the thread
-//        UserMemorySystem.addMemory(
-//            threadId = thread.id,
-//            role = "user",
-//            content = message.text ?: "",
-//            metadata = mapOf(
-//                "username" to (message.from.username ?: "unknown"),
-//                "first_name" to message.from.first_name,
-//                "message_id" to message.message_id.toString()
-//            )
-//        )
 
         // Create a fakeChatCommand to reuse the existing /chat handler logic
         val fakeChatCommand = message.copy(
@@ -151,18 +128,6 @@ class MemoryEnabledMessageProcessor(private val client: TelegramClient) {
 
     private suspend fun handleDefaultMention(message: Message) {
         logger.info { "Bot was mentioned without a command" }
-        val params = ReplyParameters(message.message_id, message.chat.id)
-        client.sendMessage(
-            """
-            Hello! I'm Gaudí. You can interact with me using:
-            
-            • /chat [message] - Start a conversation
-            • /summary - Summarize chat content from the last 24 hours
-            • /summary hours=12 - Summarize with custom time window
-            • /memory - Manage your conversation history
-            • /setkey - Set your own API key
-            
-            You can also reply to my messages to continue our conversation.
-            """.trimIndent(), params)
+        handleConversationContinuation(message)
     }
 }
